@@ -1,0 +1,3 @@
+sonar-scanner.bat -D"sonar.projectKey=Go-Server" -D"sonar.sources=D:\Programming\Go-Workspace\src\ServClientDz\Server" -D"sonar.host.url=http://localhost:9000" -D"sonar.login=4edb56107a06f9ae5c531f9c589783d2b457267a" ^
+& ^
+sonar-scanner.bat -D"sonar.projectKey=Go-Client" -D"sonar.sources=D:\Programming\Go-Workspace\src\ServClientDz\Client" -D"sonar.host.url=http://localhost:9000" -D"sonar.login=4edb56107a06f9ae5c531f9c589783d2b457267a"

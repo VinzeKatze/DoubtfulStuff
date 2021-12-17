@@ -1,0 +1,6 @@
+projectKey=Go-Client
+serverUrl=http://localhost:9000
+serverVersion=9.0.0.45539
+dashboardUrl=http://localhost:9000/dashboard?id=Go-Client
+ceTaskId=AXqMmlQv_aslzoaXSdWj
+ceTaskUrl=http://localhost:9000/api/ce/task?id=AXqMmlQv_aslzoaXSdWj
